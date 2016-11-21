@@ -1,0 +1,52 @@
+import maya.cmds as cmds
+
+# Store a selection in a variable called mySelection
+mySelection = cmds.ls(selection=True)
+
+# If nothing is selected, select all dag nodes
+if len(mySelection) == 0:
+    mySelection = cmds.ls(dag=True, long=True)
+
+# For mySelection sort the list based on the length of their names. The reverse will reverse the order 
+# of the list from short->long, to long->short. This will give us the childeren first and then the 
+# parents afterwords. 
+mySelection.sort(key=len, reverse=True)  
+
+# For each obj in selection
+for obj in mySelection:
+    
+    # split all the names in each object into induvidual words in a list. The | is used as a seperatior
+    # for python to split the string into a list of words. We then select the last word of the list using
+    # [-1]. This will give us the name of each object (without the full path). 
+    shortName = obj.split("|")[-1]
+    
+    # We then list all the childeren of an object. 
+    children = cmds.listRelatives(obj, children=True, fullPath=True) or []
+    
+    # We then look at what object type our selection is. If it has a child we store the child name as a
+    # variable. If the object does not have a child we used the current objects name and store it as a 
+    # variable called objType
+    if len(children) == 1:
+        child = children[0]
+        objType = cmds.objectType(child)
+    else:
+        objType = cmds.objectType(obj)
+    
+    # We then use a series of if, elif and else, to create a suffix for each induvidual object. 
+    if objType == "mesh":
+        suffix = "geo"    
+    elif objType == "joint":
+        suffix = "jnt"
+   
+    elif objType == "camera":
+        print "Skipping camera"
+        continue
+    else:
+        suffix ="grp"
+    
+    # We store the object name and we add a suffix to a variable called newName. 
+    newName = shortName + "_" + suffix
+    print newName
+    
+    # Rename objects. 
+    cmds.rename(obj, newName)
